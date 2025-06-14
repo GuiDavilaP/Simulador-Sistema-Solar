@@ -1,6 +1,5 @@
 from .gravity import calculate_gravitational_force
 from .collisions import CollisionSystem
-import math
 
 DAY_IN_SECONDS = 86400
 DEFAULT_DAYS_PER_SECOND = 10 

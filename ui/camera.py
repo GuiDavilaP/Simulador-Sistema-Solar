@@ -1,7 +1,6 @@
-import math
 
 class Camera:
-    def __init__(self, width, height, max_distance=1e12):
+    def __init__(self, width, height, max_distance=3e12):
         self.width = width
         self.height = height
         
@@ -22,8 +21,7 @@ class Camera:
         
     def update(self, dt, keys_pressed):
         """Atualiza a posição da câmera baseada nas teclas pressionadas"""
-        # Calcular velocidade atual (baseada no zoom - quanto mais zoom out, mais rápido)
-        # A velocidade agora é inversamente proporcional ao zoom para manter movimento consistente
+        # A velocidade é inversamente proporcional ao zoom para manter movimento consistente
         current_speed = self.base_speed / self.zoom
         
         # Movimento horizontal
@@ -61,8 +59,8 @@ class Camera:
         relative_y = world_y - self.y
         
         # Converter para coordenadas da tela
-        screen_x = (relative_x / scale * self.zoom) + self.width / 2
-        screen_y = (relative_y / scale * self.zoom) + self.height / 2
+        screen_x = (relative_x * self.zoom / scale) + self.width / 2
+        screen_y = (relative_y * self.zoom / scale) + self.height / 2
         
         return screen_x, screen_y
     
@@ -78,21 +76,8 @@ class Camera:
         
         return world_x, world_y
     
-    def center_on_system(self, bodies):
-        """Centraliza a câmera no sol"""
-        for body in bodies:
-            if body.name == 'Sol':
-                self.x = body.position[0]
-                self.y = body.position[1]
-                return
-    
-    def get_distance_from_origin(self):
-        """Retorna a distância da câmera da origem"""
-        return math.sqrt(self.x**2 + self.y**2)
-    
     def reset(self):
         """Reseta a câmera para a origem"""
-        print("Resetting camera to origin")
         self.x = 0.0
         self.y = 0.0
         self.zoom = 1.0

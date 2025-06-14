@@ -1,90 +1,77 @@
 import pygame
-import math
+import pygame.gfxdraw
 
 class Renderer:
     def __init__(self, width, height):
         self.width = width
         self.height = height
-        
-        # Escala para converter de metros para pixels
-        # 1 pixel = ~1e9 metros (1 milhão de km por pixel aproximadamente)
-        self.scale = 1e9
-        
-        # Cores e estilos
-        self.background_color = (0, 0, 0)
-        self.trail_color = (255,0,0,50)
-        
-        # Sistema de trilhas
-        self.show_trails = False
-        self.trails = {}  # Dicionário para armazenar trilhas de cada corpo
-        self.max_trail_length = 1000
+        self.scale = 1e9  # Escala para converter metros para pixels
     
-    def draw_with_camera(self, screen, bodies, camera):
-        """Desenha todos os corpos usando o sistema de câmera"""
-        screen.fill(self.background_color)
+    def draw_bodies_with_camera(self, screen, bodies_data, camera):
+        """Renderiza corpos celestes usando dados JSON do backend"""
+        for body_data in bodies_data:
+            # Calcular posição na tela considerando a câmera
+            screen_x = (body_data['position'][0] - camera.x) / (self.scale / camera.zoom) + self.width / 2
+            screen_y = (body_data['position'][1] - camera.y) / (self.scale / camera.zoom) + self.height / 2
+            
+            # Calcular raio na tela
+            radius_on_screen = max(1.0, body_data['radius'] * camera.zoom)
+            
+            # Desenhar apenas se estiver visível na tela
+            margin = radius_on_screen + 5  # Margem maior para suavização
+            if (-margin <= screen_x <= self.width + margin and
+                -margin <= screen_y <= self.height + margin):
+                
+                # Converter cor de lista para tupla se necessário
+                color = tuple(body_data['color']) if isinstance(body_data['color'], list) else body_data['color']
+                
+                # Usar coordenadas float para melhor precisão
+                center_x = int(round(screen_x))
+                center_y = int(round(screen_y))
+                radius_int = int(round(radius_on_screen))
+                
+                # Desenhar corpo principal
+                if radius_int >= 1:
+                    # Círculo preenchido anti-aliased
+                    pygame.gfxdraw.filled_circle(screen, center_x, center_y, radius_int, color)
+                    pygame.gfxdraw.aacircle(screen, center_x, center_y, radius_int, color)
+                
+                # Desenhar borda suave para melhor visibilidade
+                if radius_int > 3:  # Só desenhar borda se o planeta for grande
+                    border_color = (200, 200, 200)
+                    
+                    # Borda externa anti-aliased
+                    pygame.gfxdraw.aacircle(screen, center_x, center_y, radius_int, border_color)
+                    
+                    # Borda interna opcional para planetas maiores
+                    if radius_int > 8:
+                        inner_border = max(1, radius_int - 1)
+                        pygame.gfxdraw.aacircle(screen, center_x, center_y, inner_border, border_color)
+
+                # Desenhar nome do corpo se zoom suficiente
+                if camera.zoom > 0.5 and radius_int > 8:
+                    self._draw_body_label(screen, body_data["name"], screen_x, screen_y + radius_int + 8)
         
-        # Desenhar trilhas se habilitadas
-        if self.show_trails:
-            self._draw_trails(screen, camera)
-        
-        # Desenhar corpos
-        for body in bodies:
-            self._draw_body(screen, body, camera)
-        
-        # Desenhar elementos de UI relacionados ao espaço
-        self._draw_scale_indicator(screen, camera)
-    
-    def _draw_body(self, screen, body, camera):
-        """Desenha um corpo celestial na tela"""
-        # Converter posição do mundo para coordenadas da tela
-        screen_x, screen_y = camera.world_to_screen(
-            body.position[0], body.position[1], self.scale
-        )
-        
-        # Verificar se o corpo está visível na tela
-        margin = body.radius * 2
-        if (screen_x < -margin or screen_x > self.width + margin or
-            screen_y < -margin or screen_y > self.height + margin):
-            return  # Corpo fora da tela, não desenhar
-        
-        # Calcular raio na tela baseado no zoom
-        screen_radius = max(2, int(body.radius * camera.zoom))
-        
-        # Desenhar o corpo
-        pygame.draw.circle(
-            screen, 
-            body.color, 
-            (int(screen_x), int(screen_y)), 
-            screen_radius
-        )
-        
-        # Desenhar borda para melhor visibilidade
-        if screen_radius > 5:
-            pygame.draw.circle(
-                screen, 
-                (255, 255, 255), 
-                (int(screen_x), int(screen_y)), 
-                screen_radius, 
-                1
-            )
-        
-        # Desenhar nome do corpo se zoom suficiente
-        if camera.zoom > 0.5 and screen_radius > 8:
-            self._draw_body_label(screen, body.name, screen_x, screen_y + screen_radius + 5)
-        
-        # Atualizar trilha
-        if self.show_trails:
-            self._update_trail(body)
-    
     def _draw_body_label(self, screen, name, x, y):
-        """Desenha o nome de um corpo celestial"""
+        """Desenha o nome de um corpo celestial com anti-aliasing"""
+        # Usar fonte com anti-aliasing
         font = pygame.font.Font(None, 20)
-        text = font.render(name, True, (200, 200, 200))
-        text_rect = text.get_rect(center=(int(x), int(y)))
+        text = font.render(name, True, (200, 200, 200))  # True = anti-aliasing
+        text_rect = text.get_rect(center=(int(round(x)), int(round(y))))
+        
+        # Desenhar sombra sutil para melhor legibilidade
+        shadow_color = (50, 50, 50)
+        shadow_text = font.render(name, True, shadow_color)
+        shadow_rect = text_rect.copy()
+        shadow_rect.x += 1
+        shadow_rect.y += 1
+        screen.blit(shadow_text, shadow_rect)
+        
+        # Desenhar texto principal
         screen.blit(text, text_rect)
-    
+
     def _draw_scale_indicator(self, screen, camera):
-        """Desenha um indicador de escala no canto da tela"""
+        """Desenha um indicador de escala no canto da tela com anti-aliasing"""
         # Calcular tamanho da barra de escala
         scale_length_pixels = 100  # pixels
         scale_length_world = scale_length_pixels * self.scale / camera.zoom
@@ -107,18 +94,36 @@ class Renderer:
         bar_x = self.width - 120
         bar_y = self.height - 30
         
-        # Desenhar barra
-        pygame.draw.line(screen, (255, 255, 255), 
+        # Desenhar barra com linhas mais suaves
+        line_color = (200, 200, 200)  # Cor mais suave
+        
+        # Linha principal
+        pygame.draw.line(screen, line_color, 
                         (bar_x, bar_y), (bar_x + scale_length_pixels, bar_y), 2)
-        pygame.draw.line(screen, (255, 255, 255), 
+        
+        # Marcadores nas extremidades
+        pygame.draw.line(screen, line_color, 
                         (bar_x, bar_y - 5), (bar_x, bar_y + 5), 2)
-        pygame.draw.line(screen, (255, 255, 255), 
+        pygame.draw.line(screen, line_color, 
                         (bar_x + scale_length_pixels, bar_y - 5), 
                         (bar_x + scale_length_pixels, bar_y + 5), 2)
         
-        # Desenhar texto da escala
+        # Desenhar texto da escala com anti-aliasing
         font = pygame.font.Font(None, 18)
         scale_text = f"{scale_value:.1f} {scale_unit}"
-        text_surface = font.render(scale_text, True, (255, 255, 255))
+        text_surface = font.render(scale_text, True, line_color)  # True = anti-aliasing
         text_rect = text_surface.get_rect(center=(bar_x + scale_length_pixels // 2, bar_y - 15))
         screen.blit(text_surface, text_rect)
+
+    def draw_smooth_circle(self, screen, color, center, radius):
+        """Função auxiliar para desenhar círculos suaves"""
+        if radius < 1:
+            return
+            
+        center_x, center_y = int(round(center[0])), int(round(center[1]))
+        radius_int = int(round(radius))
+        
+        # Círculo preenchido
+        pygame.gfxdraw.filled_circle(screen, center_x, center_y, radius_int, color)
+        # Borda anti-aliased
+        pygame.gfxdraw.aacircle(screen, center_x, center_y, radius_int, color)

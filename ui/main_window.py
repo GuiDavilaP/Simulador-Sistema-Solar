@@ -3,25 +3,24 @@ import pygame.font
 from .renderer import Renderer
 from .planet_adder import PlanetAdder
 from .camera import Camera
-from physics.simulator import SolarSystemSimulator
-from physics.bodies import CelestialBody
+from .simulator_client import SimulatorClient
 
 class MainWindow:
-    def __init__(self, width=1280, height=720):
+    def __init__(self, width=1280, height=720, backend_path="python simulator_backend.py"):
         pygame.init()
         pygame.font.init()
         self.screen = pygame.display.set_mode((width, height))
-        pygame.display.set_caption("Simulador do Sistema Solar - Melhorado")
+        pygame.display.set_caption("Simulador do Sistema Solar")
         
         self.clock = pygame.time.Clock()
         self.running = False
         self.paused = False
         
-        # Inicializar simulador, renderer e câmera
-        self.simulator = SolarSystemSimulator()
+        # Inicializar cliente do simulador, renderer e câmera
+        self.simulator_client = SimulatorClient(backend_path)
         self.renderer = Renderer(width, height)
         self.camera = Camera(width, height)
-        self.planet_adder = PlanetAdder(self.simulator, self.renderer, self.camera)
+        self.planet_adder = PlanetAdder(self.simulator_client, self.renderer, self.camera)
         
         # Controle de interface
         self.show_stats = True
@@ -36,116 +35,22 @@ class MainWindow:
             'down': False,
             'shift': False
         }
+
+        # Mapeamento de teclas para direções
+        self.key_mapping = {
+            pygame.K_LEFT: 'left',
+            pygame.K_RIGHT: 'right',
+            pygame.K_UP: 'up',
+            pygame.K_DOWN: 'down',
+            pygame.K_a: 'left',
+            pygame.K_d: 'right',
+            pygame.K_w: 'up',
+            pygame.K_s: 'down'
+        }
         
         # Controle de velocidade da simulação
-        self.time_multipliers = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 50.0, 100.0]
+        self.time_multipliers = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
         self.current_multiplier_index = 2  # Começa em 1.0x
-        
-        # Configurar sistema solar inicial
-        self._initialize_solar_system()
-        
-    def _initialize_solar_system(self):
-        """Inicializa o sistema solar com todos os planetas"""
-        # Sol (central)
-        sun = CelestialBody(
-            name="Sol",
-            mass=1.989e30,
-            position=[0, 0],
-            velocity=[0, 0],
-            radius=40,
-            color=(255, 220, 0)
-        )
-        
-        # Mercúrio
-        mercury = CelestialBody(
-            name="Mercurio",
-            mass=3.285e23,
-            position=[5.79e10, 0],  # 0.387 UA
-            velocity=[0, 47.36e3],
-            radius=6,
-            color=(169, 169, 169)
-        )
-
-        # Vênus
-        venus = CelestialBody(
-            name="Venus",
-            mass=4.867e24,
-            position=[1.082e11, 0],  # 0.723 UA
-            velocity=[0, 35.02e3],
-            radius=9,
-            color=(255, 198, 73)
-        )
-
-        # Terra
-        earth = CelestialBody(
-            name="Terra",
-            mass=5.972e24,
-            position=[1.496e11, 0],  # 1.0 UA
-            velocity=[0, 29.8e3],
-            radius=10,
-            color=(100, 149, 237)
-        )
-        
-        # Marte
-        mars = CelestialBody(
-            name="Marte",
-            mass=6.39e23,
-            position=[2.279e11, 0],  # 1.52 UA
-            velocity=[0, 24.1e3],
-            radius=8,
-            color=(205, 92, 92)
-        )
-        
-        # Júpiter
-        jupiter = CelestialBody(
-            name="Jupiter",
-            mass=1.898e27,
-            position=[7.786e11, 0],  # 5.20 UA
-            velocity=[0, 13.1e3],
-            radius=25,
-            color=(255, 165, 0)
-        )
-
-        # Saturno
-        saturn = CelestialBody(
-            name="Saturno",
-            mass=5.683e26,
-            position=[1.434e12, 0],  # 9.58 UA
-            velocity=[0, 9.7e3],
-            radius=22,
-            color=(238, 232, 205)
-        )
-
-        # Urano
-        uranus = CelestialBody(
-            name="Urano",
-            mass=8.681e25,
-            position=[2.871e12, 0],  # 19.18 UA
-            velocity=[0, 6.8e3],
-            radius=16,
-            color=(173, 216, 230)
-        )
-
-        # Netuno
-        neptune = CelestialBody(
-            name="Netuno",
-            mass=1.024e26,
-            position=[4.495e12, 0],  # 30.07 UA
-            velocity=[0, 5.4e3],
-            radius=15,
-            color=(0, 0, 128)
-        )
-
-        # Adicionar todos os corpos ao simulador
-        self.simulator.add_body(sun)
-        self.simulator.add_body(mercury)
-        self.simulator.add_body(venus)
-        self.simulator.add_body(earth)
-        self.simulator.add_body(mars)
-        self.simulator.add_body(jupiter)
-        self.simulator.add_body(saturn)
-        self.simulator.add_body(uranus)
-        self.simulator.add_body(neptune)
         
     def _handle_events(self):
         """Processa todos os eventos do pygame"""
@@ -159,37 +64,23 @@ class MainWindow:
                     self.paused = not self.paused
                 elif event.key == pygame.K_r:
                     self._reset_simulation()
-                elif event.key == pygame.K_s:
+                elif event.key == pygame.K_m:
                     self.show_stats = not self.show_stats
                 elif event.key == pygame.K_PLUS or event.key == pygame.K_EQUALS:
                     self._change_time_speed(1)
                 elif event.key == pygame.K_MINUS:
                     self._change_time_speed(-1)
-                
-                # Controles de câmera
-                elif event.key == pygame.K_LEFT:
-                    self.keys_pressed['left'] = True
-                elif event.key == pygame.K_RIGHT:
-                    self.keys_pressed['right'] = True
-                elif event.key == pygame.K_UP:
-                    self.keys_pressed['up'] = True
-                elif event.key == pygame.K_DOWN:
-                    self.keys_pressed['down'] = True
-                
-                # Teclas especiais de câmera
                 elif event.key == pygame.K_c:
-                    self.camera.center_on_system(self.simulator.bodies)
+                    self.camera.reset()
+                
+                # Atualizar estado das teclas de movimento quando pressionadas
+                if event.key in self.key_mapping:
+                    self.keys_pressed[self.key_mapping[event.key]] = True
                     
             elif event.type == pygame.KEYUP:
-                # Parar movimento da câmera
-                if event.key == pygame.K_LEFT:
-                    self.keys_pressed['left'] = False
-                elif event.key == pygame.K_RIGHT:
-                    self.keys_pressed['right'] = False
-                elif event.key == pygame.K_UP:
-                    self.keys_pressed['up'] = False
-                elif event.key == pygame.K_DOWN:
-                    self.keys_pressed['down'] = False
+                # Atualizar estado das teclas de movimento quando soltas
+                if event.key in self.key_mapping:
+                    self.keys_pressed[self.key_mapping[event.key]] = False
                     
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button in (4, 5):  # Mouse wheel
@@ -206,16 +97,14 @@ class MainWindow:
             self.current_multiplier_index + direction
         ))
         multiplier = self.time_multipliers[self.current_multiplier_index]
-        self.simulator.time_scale = 86400 * 10 * multiplier  # 10 dias/segundo base
+        self.simulator_client.set_time_scale(multiplier)
     
     def _reset_simulation(self):
         """Reinicia a simulação"""
-        self.simulator = SolarSystemSimulator()
-        self.planet_adder = PlanetAdder(self.simulator, self.renderer, self.camera)
-        self._initialize_solar_system()
+        self.simulator_client.reset()
         self.camera.reset()
         self.camera.set_zoom(1.0)
-    
+
     def _draw_ui(self):
         """Desenha a interface do usuário"""
         if not self.show_stats:
@@ -228,7 +117,7 @@ class MainWindow:
         self.screen.blit(overlay, (10, 10))
         
         # Estatísticas do sistema
-        stats = self.simulator.get_system_stats()
+        stats = self.simulator_client.get_stats()
         y_offset = 15
         
         # Status da simulação
@@ -238,6 +127,13 @@ class MainWindow:
         self.screen.blit(status_text, (15, y_offset))
         y_offset += 25
         
+        # Status da conexão
+        connection_status = "CONECTADO" if self.simulator_client.is_alive() else "DESCONECTADO"
+        connection_color = (0, 255, 0) if self.simulator_client.is_alive() else (255, 0, 0)
+        connection_text = self.small_font.render(f"Backend: {connection_status}", True, connection_color)
+        self.screen.blit(connection_text, (15, y_offset))
+        y_offset += 20
+        
         # Velocidade da simulação
         speed_multiplier = self.time_multipliers[self.current_multiplier_index]
         speed_text = self.small_font.render(f"Velocidade: {speed_multiplier}x", True, (255, 255, 255))
@@ -245,22 +141,22 @@ class MainWindow:
         y_offset += 20
         
         # Número de corpos
-        bodies_text = self.small_font.render(f"Corpos: {stats['total_bodies']}", True, (255, 255, 255))
+        bodies_text = self.small_font.render(f"Corpos: {stats.get('total_bodies', 0)}", True, (255, 255, 255))
         self.screen.blit(bodies_text, (15, y_offset))
         y_offset += 20
         
         # Corpos removidos
-        removed_text = self.small_font.render(f"Removidos: {stats['bodies_removed']}", True, (255, 100, 100))
+        removed_text = self.small_font.render(f"Removidos: {stats.get('bodies_removed', 0)}", True, (255, 100, 100))
         self.screen.blit(removed_text, (15, y_offset))
         y_offset += 20
         
         # Colisões detectadas
-        collisions_text = self.small_font.render(f"Colisões: {stats['collisions_detected']}", True, (255, 150, 150))
+        collisions_text = self.small_font.render(f"Colisões: {stats.get('collisions_detected', 0)}", True, (255, 150, 150))
         self.screen.blit(collisions_text, (15, y_offset))
         y_offset += 20
         
         # Ejeções detectadas
-        ejections_text = self.small_font.render(f"Ejeções: {stats['ejections_detected']}", True, (150, 150, 255))
+        ejections_text = self.small_font.render(f"Ejeções: {stats.get('ejections_detected', 0)}", True, (150, 150, 255))
         self.screen.blit(ejections_text, (15, y_offset))
         y_offset += 20
         
@@ -269,7 +165,7 @@ class MainWindow:
         controls = [
             "ESPAÇO: Pausar/Continuar",
             "R: Reiniciar simulação",
-            "S: Mostrar/Ocultar stats",
+            "M: Mostrar/Ocultar stats",
             "+/-: Acelerar/Desacelerar",
             "Setas: Mover câmera",
             "C: Centralizar no sistema",
@@ -287,24 +183,40 @@ class MainWindow:
     
     def run(self):
         """Loop principal da aplicação"""
-        self.running = True
-        while self.running:
-            dt = self.clock.tick(60) / 1000.0  # Delta time em segundos
-            
-            self._handle_events()
-            
-            # Atualizar câmera
-            self.camera.update(dt, self.keys_pressed)
-            
-            # Atualizar simulação (apenas se não estiver pausado)
-            if not self.paused:
-                self.simulator.update(dt)
-            
-            # Renderizar
-            self.screen.fill((0, 0, 0))  # Fundo preto
-            self.renderer.draw_with_camera(self.screen, self.simulator.bodies, self.camera)
-            self._draw_ui()
-            
-            pygame.display.flip()
+        # Inicializar conexão com o backend
+        if not self.simulator_client.start():
+            print("Erro: Não foi possível conectar ao simulador backend")
+            return
         
-        pygame.quit()
+        self.running = True
+        try:
+            while self.running:
+                dt = self.clock.tick(60) / 1000.0  # Delta time em segundos
+                
+                self._handle_events()
+                
+                # Verificar se o backend ainda está rodando
+                if not self.simulator_client.is_alive():
+                    print("Backend desconectado!")
+                    break
+                
+                # Atualizar câmera
+                self.camera.update(dt, self.keys_pressed)
+                
+                # Atualizar simulação
+                self.simulator_client.update(dt, self.paused)
+                
+                # Renderizar
+                self.screen.fill((0, 0, 0))  # Fundo preto
+                
+                # Obter corpos do simulador e renderizar
+                bodies = self.simulator_client.get_bodies()
+                self.renderer.draw_bodies_with_camera(self.screen, bodies, self.camera)
+                
+                self._draw_ui()
+                
+                pygame.display.flip()
+        
+        finally:
+            self.simulator_client.stop()
+            pygame.quit()

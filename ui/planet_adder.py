@@ -1,6 +1,5 @@
 import math
 import random
-from physics.bodies import CelestialBody
 
 DEFAULT_MASS = 1e25  # Massa padrão para novos planetas
 
@@ -13,44 +12,50 @@ class PlanetAdder:
         'mars': {'mass': 6.39e23, 'radius': 8}
     }
 
-    def __init__(self, simulator, renderer, camera):
-        self.simulator = simulator
+    def __init__(self, simulator_client, renderer, camera):
+        self.simulator_client = simulator_client
         self.renderer = renderer
         self.camera = camera
         self.planet_counter = 0
         
     def handle_click(self, screen_pos, planet_mass=DEFAULT_MASS):
         """Converte clique em posição física e adiciona planeta"""
-
+        
         self.planet_counter += 1
 
         # Converter posição da tela para posição física
-        world_x = (screen_pos[0] - self.renderer.width/2) * (self.renderer.scale/self.camera.zoom) + self.camera.x
-        world_y = (screen_pos[1] - self.renderer.height/2) * (self.renderer.scale/self.camera.zoom) + self.camera.y
+        world_x = (screen_pos[0] - self.renderer.width/2) * self.renderer.scale / self.camera.zoom + self.camera.x
+        world_y = (screen_pos[1] - self.renderer.height/2) * self.renderer.scale / self.camera.zoom + self.camera.y
 
-        # Criar novo planeta (com velocidade inicial zero)
-        new_planet = CelestialBody(
-            name="Planeta " + str(self.planet_counter),
-            mass = planet_mass,
-            position=[world_x, world_y],
-            velocity=[0, 0],  # Initial velocity
-            radius=self._calculate_comparative_radius(planet_mass),
-            color=(random.randint(50,255), random.randint(50,255), random.randint(50,255))
+        # Dados do novo planeta
+        planet_name = f"Planeta {self.planet_counter}"
+        planet_position = [world_x, world_y]
+        planet_velocity = [0, 0]  # Velocidade inicial zero
+        planet_radius = self._calculate_comparative_radius(planet_mass)
+        planet_color = (random.randint(50, 255), random.randint(50, 255), random.randint(50, 255))
+        
+        # Enviar comando para adicionar planeta ao backend
+        self.simulator_client.add_body(
+            name=planet_name,
+            mass=planet_mass,
+            position=planet_position,
+            velocity=planet_velocity,
+            radius=planet_radius,
+            color=planet_color
         )
         
-        self.simulator.add_body(new_planet)
-        
     def _calculate_comparative_radius(self, mass):
-        # Find the closest reference body by mass
+        """Calcula raio baseado na massa usando corpos de referência"""
+        # Encontrar o corpo de referência mais próximo por massa
         closest_body = min(
             self.REFERENCE_BODIES.values(),
             key=lambda x: abs(math.log10(x['mass']) - math.log10(mass))
         )
         
-        # Calculate radius based on mass ratio with closest reference body
+        # Calcular raio baseado na razão de massa com o corpo de referência
         mass_ratio = mass / closest_body['mass']
-        # Use cube root to make radius scaling more reasonable
+        # Usar raiz cúbica para tornar o escalonamento de raio mais razoável
         radius = closest_body['radius'] * (mass_ratio ** (1/3))
         
-        # Ensure radius stays within reasonable bounds
+        # Garantir que o raio fique dentro de limites razoáveis
         return max(5, min(40, round(radius)))
