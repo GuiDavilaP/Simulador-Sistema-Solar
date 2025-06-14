@@ -13,9 +13,10 @@ class PlanetAdder:
         'mars': {'mass': 6.39e23, 'radius': 8}
     }
 
-    def __init__(self, simulator, renderer):
+    def __init__(self, simulator, renderer, camera):
         self.simulator = simulator
         self.renderer = renderer
+        self.camera = camera
         self.planet_counter = 0
         
     def handle_click(self, screen_pos, planet_mass=DEFAULT_MASS):
@@ -24,8 +25,8 @@ class PlanetAdder:
         self.planet_counter += 1
 
         # Converter posição da tela para posição física
-        world_x = (screen_pos[0] - self.renderer.width/2) * (self.renderer.scale/self.renderer.zoom)
-        world_y = (screen_pos[1] - self.renderer.height/2) * (self.renderer.scale/self.renderer.zoom)
+        world_x = (screen_pos[0] - self.renderer.width/2) * (self.renderer.scale/self.camera.zoom) + self.camera.x
+        world_y = (screen_pos[1] - self.renderer.height/2) * (self.renderer.scale/self.camera.zoom) + self.camera.y
 
         # Criar novo planeta (com velocidade inicial zero)
         new_planet = CelestialBody(
