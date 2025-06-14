@@ -1,15 +1,21 @@
 import math
 import random
 
-DEFAULT_MASS = 1e25  # Massa padrão para novos planetas
+DEFAULT_MASS = 5.972e24  # Massa da Terra como padrão
 
 class PlanetAdder:
     REFERENCE_BODIES = {
         'sun': {'mass': 1.989e30, 'radius': 40},
+        'medium_sun': {'mass': 1.0e29, 'radius': 35},
+        'small_sun': {'mass': 1.0e28, 'radius': 28},
         'mercury': {'mass': 3.285e23, 'radius': 6},
         'venus': {'mass': 4.867e24, 'radius': 9},
         'earth': {'mass': 5.972e24, 'radius': 10},
-        'mars': {'mass': 6.39e23, 'radius': 8}
+        'mars': {'mass': 6.39e23, 'radius': 8},
+        'jupiter': {'mass': 1.898e27, 'radius': 25},
+        'saturn': {'mass': 5.683e26, 'radius': 22},
+        'neptune': {'mass': 8.681e25, 'radius': 16},
+        'uranus': {'mass': 1.024e26, 'radius': 15},
     }
 
     def __init__(self, simulator_client, renderer, camera):
@@ -19,7 +25,7 @@ class PlanetAdder:
         self.planet_counter = 0
         
     def handle_click(self, screen_pos, planet_mass=DEFAULT_MASS):
-        """Converte clique em posição física e adiciona planeta"""
+        """Converte clique em posição física e adiciona planeta com massa especificada"""
         
         self.planet_counter += 1
 
@@ -31,8 +37,8 @@ class PlanetAdder:
         planet_name = f"Planeta {self.planet_counter}"
         planet_position = [world_x, world_y]
         planet_velocity = [0, 0]  # Velocidade inicial zero
-        planet_radius = self._calculate_comparative_radius(planet_mass)
-        planet_color = (random.randint(50, 255), random.randint(50, 255), random.randint(50, 255))
+        planet_radius = self._calculate_radius_from_mass(planet_mass)
+        planet_color = random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)  # Cor aleatória
         
         # Enviar comando para adicionar planeta ao backend
         self.simulator_client.add_body(
@@ -44,18 +50,28 @@ class PlanetAdder:
             color=planet_color
         )
         
+    def _calculate_radius_from_mass(self, mass):
+        """Calcula raio baseado na massa usando uma escala logarítmica suave"""
+        # Definir limites de massa e raio
+        min_mass = 3.285e23  # Mercúrio
+        max_mass = 1.989e30  # Sol
+        min_radius = 6       # Raio mínimo (Mercúrio)
+        max_radius = 40      # Raio máximo (Sol)
+        
+        # Usar escala logarítmica para uma distribuição mais natural
+        mass_log = math.log10(mass)
+        min_mass_log = math.log10(min_mass)
+        max_mass_log = math.log10(max_mass)
+        
+        # Normalizar a massa na escala logarítmica (0 a 1)
+        normalized_mass = (mass_log - min_mass_log) / (max_mass_log - min_mass_log)
+        
+        # Calcular raio baseado na massa normalizada
+        radius = min_radius + (max_radius - min_radius) * normalized_mass
+        
+        # Garantir que o raio fique dentro dos limites
+        return max(min_radius, min(max_radius, round(radius)))
+            
     def _calculate_comparative_radius(self, mass):
-        """Calcula raio baseado na massa usando corpos de referência"""
-        # Encontrar o corpo de referência mais próximo por massa
-        closest_body = min(
-            self.REFERENCE_BODIES.values(),
-            key=lambda x: abs(math.log10(x['mass']) - math.log10(mass))
-        )
-        
-        # Calcular raio baseado na razão de massa com o corpo de referência
-        mass_ratio = mass / closest_body['mass']
-        # Usar raiz cúbica para tornar o escalonamento de raio mais razoável
-        radius = closest_body['radius'] * (mass_ratio ** (1/3))
-        
-        # Garantir que o raio fique dentro de limites razoáveis
-        return max(5, min(40, round(radius)))
+        """Método mantido para compatibilidade - usa o novo método"""
+        return self._calculate_radius_from_mass(mass)

@@ -1,5 +1,6 @@
 import pygame
 import pygame.font
+import math
 from .renderer import Renderer
 from .planet_adder import PlanetAdder
 from .camera import Camera
@@ -49,11 +50,112 @@ class MainWindow:
         }
         
         # Controle de velocidade da simulação
-        self.time_multipliers = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+        self.time_multipliers = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0]
         self.current_multiplier_index = 2  # Começa em 1.0x
+        
+        # Controle do slider de massa
+        self.slider_dragging = False
+        self.slider_rect = pygame.Rect(width - 320, height - 80, 200, 20)
+        self.slider_handle_rect = pygame.Rect(0, 0, 12, 24)
+        
+        # Configuração da massa (escala logarítmica)
+        self.min_mass_log = math.log10(3.285e23)  # Massa de Mercúrio
+        self.max_mass_log = math.log10(1.989e30)  # Massa do Sol
+        self.current_mass_log = math.log10(5.972e24)  # Começa com massa da Terra
+        
+        self._update_slider_handle_position()
+        
+    def _update_slider_handle_position(self):
+        """Atualiza a posição do handle do slider baseado na massa atual"""
+        ratio = (self.current_mass_log - self.min_mass_log) / (self.max_mass_log - self.min_mass_log)
+        handle_x = self.slider_rect.x + ratio * (self.slider_rect.width - self.slider_handle_rect.width)
+        self.slider_handle_rect.centerx = handle_x + self.slider_handle_rect.width // 2
+        self.slider_handle_rect.centery = self.slider_rect.centery
+        
+    def _get_current_mass(self):
+        """Retorna a massa atual baseada na posição do slider"""
+        return 10 ** self.current_mass_log
+        
+    def _get_mass_reference_name(self, mass):
+        """Retorna o nome do corpo celeste mais próximo em massa"""
+        references = {
+            'Mercúrio': 3.285e23,
+            'Vênus': 4.867e24,
+            'Terra': 5.972e24,
+            'Marte': 6.39e23,
+            'Júpiter': 1.898e27,
+            'Saturno': 5.683e26,
+            'Netuno': 8.681e25,
+            'Urano': 1.024e26,
+            'Sol Pequeno': 1.0e28,
+            'Sol Menor': 1.0e29,
+            'Sol': 1.989e30
+        }
+        
+        closest_name = min(references.keys(), 
+                          key=lambda x: abs(math.log10(references[x]) - math.log10(mass)))
+        return closest_name
+        
+    def _handle_slider_interaction(self, mouse_pos, mouse_pressed):
+        """Manipula a interação com o slider de massa"""
+        if mouse_pressed[0]:  # Botão esquerdo do mouse pressionado
+            if self.slider_rect.collidepoint(mouse_pos) or self.slider_dragging:
+                self.slider_dragging = True
+                # Calcular nova posição baseada no mouse
+                relative_x = mouse_pos[0] - self.slider_rect.x
+                relative_x = max(0, min(self.slider_rect.width, relative_x))
+                
+                # Calcular nova massa
+                ratio = relative_x / self.slider_rect.width
+                self.current_mass_log = self.min_mass_log + ratio * (self.max_mass_log - self.min_mass_log)
+                self._update_slider_handle_position()
+        else:
+            self.slider_dragging = False
+            
+    def _draw_mass_slider(self):
+        """Desenha o slider de massa na tela"""
+        # Fundo do slider
+        pygame.draw.rect(self.screen, (60, 60, 60), self.slider_rect)
+        pygame.draw.rect(self.screen, (100, 100, 100), self.slider_rect, 2)
+        
+        # Handle do slider
+        pygame.draw.rect(self.screen, (200, 200, 200), self.slider_handle_rect)
+        pygame.draw.rect(self.screen, (255, 255, 255), self.slider_handle_rect, 2)
+        
+        # Texto do slider
+        current_mass = self._get_current_mass()
+        reference_name = self._get_mass_reference_name(current_mass)
+        
+        # Título
+        title_text = self.small_font.render("Massa do Novo Planeta:", True, (255, 255, 255))
+        self.screen.blit(title_text, (self.slider_rect.x, self.slider_rect.y - 40))
+        
+        # Valor atual
+        mass_text = f"{reference_name} ({current_mass:.2e} kg)"
+        value_text = self.small_font.render(mass_text, True, (255, 255, 255))
+        self.screen.blit(value_text, (self.slider_rect.x, self.slider_rect.y - 20))
+        
+        # Marcadores de referência
+        references = [
+            ("Mercúrio", 3.285e23),
+            ("Terra", 5.972e24),
+            ("Júpiter", 1.898e27),
+            ("Sol", 1.989e30)
+        ]
+        
+        for name, mass in references:
+            ratio = (math.log10(mass) - self.min_mass_log) / (self.max_mass_log - self.min_mass_log)
+            x = self.slider_rect.x + ratio * self.slider_rect.width
+            pygame.draw.line(self.screen, (150, 150, 150), (x, self.slider_rect.bottom), (x, self.slider_rect.bottom + 5), 2)
         
     def _handle_events(self):
         """Processa todos os eventos do pygame"""
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_pressed = pygame.mouse.get_pressed()
+        
+        # Atualizar slider
+        self._handle_slider_interaction(mouse_pos, mouse_pressed)
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
@@ -72,6 +174,10 @@ class MainWindow:
                     self._change_time_speed(-1)
                 elif event.key == pygame.K_c:
                     self.camera.reset()
+                elif event.key == pygame.K_t:  # Nova tecla para limpar rastros
+                    self.renderer.clear_trails()
+                elif event.key == pygame.K_g:  # Nova tecla para regenerar estrelas
+                    self.renderer.regenerate_stars()
                 
                 # Atualizar estado das teclas de movimento quando pressionadas
                 if event.key in self.key_mapping:
@@ -87,8 +193,13 @@ class MainWindow:
                     zoom_factor = 1.1 if event.button == 4 else 0.9
                     new_zoom = self.camera.zoom * zoom_factor
                     self.camera.set_zoom(new_zoom)
-                else:
-                    self.planet_adder.handle_click(event.pos)
+                elif event.button == 1:  # Clique esquerdo
+                    # Verificar se não está clicando no slider
+                    if not (self.slider_rect.collidepoint(event.pos) or 
+                           self.slider_handle_rect.collidepoint(event.pos)):
+                        # Adicionar planeta com a massa atual do slider
+                        current_mass = self._get_current_mass()
+                        self.planet_adder.handle_click(event.pos, current_mass)
     
     def _change_time_speed(self, direction):
         """Altera a velocidade da simulação"""
@@ -104,6 +215,7 @@ class MainWindow:
         self.simulator_client.reset()
         self.camera.reset()
         self.camera.set_zoom(1.0)
+        self.renderer.clear_trails()  # Limpar rastros ao reiniciar
 
     def _draw_ui(self):
         """Desenha a interface do usuário"""
@@ -161,7 +273,7 @@ class MainWindow:
         y_offset += 20
         
         # Controles
-        controls_y = self.screen.get_height() - 160
+        controls_y = self.screen.get_height() - 200
         controls = [
             "ESPAÇO: Pausar/Continuar",
             "R: Reiniciar simulação",
@@ -169,10 +281,12 @@ class MainWindow:
             "+/-: Acelerar/Desacelerar",
             "Setas: Mover câmera",
             "C: Centralizar no sistema",
+            "T: Limpar rastros",
+            "G: Regenerar estrelas",
             "Clique-esquerdo: Adicionar planeta"
         ]
         
-        control_overlay = pygame.Surface((280, 180))
+        control_overlay = pygame.Surface((280, 220))
         control_overlay.set_alpha(128)
         control_overlay.fill((0, 0, 0))
         self.screen.blit(control_overlay, (10, controls_y))
@@ -211,9 +325,11 @@ class MainWindow:
                 
                 # Obter corpos do simulador e renderizar
                 bodies = self.simulator_client.get_bodies()
-                self.renderer.draw_bodies_with_camera(self.screen, bodies, self.camera)
+                self.renderer.draw_bodies_with_camera(self.screen, bodies, self.camera, self.time_multipliers[self.current_multiplier_index])
                 
+                # Desenhar UI
                 self._draw_ui()
+                self._draw_mass_slider()
                 
                 pygame.display.flip()
         

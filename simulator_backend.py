@@ -28,7 +28,7 @@ class SimulatorBackend:
         
         # Mercúrio
         mercury = CelestialBody(
-            name="Mercurio",
+            name="Mercúrio",
             mass=3.285e23,
             position=[5.79e10, 0],
             velocity=[0, 47.36e3],
@@ -38,7 +38,7 @@ class SimulatorBackend:
 
         # Vênus
         venus = CelestialBody(
-            name="Venus",
+            name="Vênus",
             mass=4.867e24,
             position=[1.082e11, 0],
             velocity=[0, 35.02e3],
@@ -68,7 +68,7 @@ class SimulatorBackend:
         
         # Júpiter
         jupiter = CelestialBody(
-            name="Jupiter",
+            name="Júpiter",
             mass=1.898e27,
             position=[7.786e11, 0],
             velocity=[0, 13.1e3],
