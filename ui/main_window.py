@@ -174,10 +174,6 @@ class MainWindow:
                     self._change_time_speed(-1)
                 elif event.key == pygame.K_c:
                     self.camera.reset()
-                elif event.key == pygame.K_t:  # Nova tecla para limpar rastros
-                    self.renderer.clear_trails()
-                elif event.key == pygame.K_g:  # Nova tecla para regenerar estrelas
-                    self.renderer.regenerate_stars()
                 
                 # Atualizar estado das teclas de movimento quando pressionadas
                 if event.key in self.key_mapping:
@@ -216,6 +212,7 @@ class MainWindow:
         self.camera.reset()
         self.camera.set_zoom(1.0)
         self.renderer.clear_trails()  # Limpar rastros ao reiniciar
+        self.renderer.regenerate_stars()  # Regenerar estrelas ao reiniciar
 
     def _draw_ui(self):
         """Desenha a interface do usuário"""
@@ -281,8 +278,6 @@ class MainWindow:
             "+/-: Acelerar/Desacelerar",
             "Setas: Mover câmera",
             "C: Centralizar no sistema",
-            "T: Limpar rastros",
-            "G: Regenerar estrelas",
             "Clique-esquerdo: Adicionar planeta"
         ]
         
