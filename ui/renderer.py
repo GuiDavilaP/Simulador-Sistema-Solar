@@ -272,7 +272,3 @@ class Renderer:
     def clear_trails(self):
         """Limpa todos os rastros (útil ao reiniciar simulação)"""
         self.trails.clear()
-        
-    def regenerate_stars(self):
-        """Regenera as estrelas de fundo"""
-        self.background_stars = self._generate_stars(150)

@@ -51,7 +51,7 @@ class MainWindow:
         
         # Controle de velocidade da simulação
         self.time_multipliers = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0]
-        self.current_multiplier_index = 2  # Começa em 1.0x
+        self.time_multiplier_index = 2  # Começa em 1.0x
         
         # Controle do slider de massa
         self.slider_dragging = False
@@ -199,20 +199,19 @@ class MainWindow:
     
     def _change_time_speed(self, direction):
         """Altera a velocidade da simulação"""
-        self.current_multiplier_index = max(0, min(
+        self.time_multiplier_index = max(0, min(
             len(self.time_multipliers) - 1, 
-            self.current_multiplier_index + direction
+            self.time_multiplier_index + direction
         ))
-        multiplier = self.time_multipliers[self.current_multiplier_index]
+        multiplier = self.time_multipliers[self.time_multiplier_index]
         self.simulator_client.set_time_scale(multiplier)
     
     def _reset_simulation(self):
         """Reinicia a simulação"""
         self.simulator_client.reset()
         self.camera.reset()
-        self.camera.set_zoom(1.0)
+        self.time_multiplier_index = 2  # Volta para 1.0x
         self.renderer.clear_trails()  # Limpar rastros ao reiniciar
-        self.renderer.regenerate_stars()  # Regenerar estrelas ao reiniciar
 
     def _draw_ui(self):
         """Desenha a interface do usuário"""
@@ -244,8 +243,9 @@ class MainWindow:
         y_offset += 20
         
         # Velocidade da simulação
-        speed_multiplier = self.time_multipliers[self.current_multiplier_index]
-        speed_text = self.small_font.render(f"Velocidade: {speed_multiplier}x", True, (255, 255, 255))
+        speed_multiplier = self.time_multipliers[self.time_multiplier_index]
+        days_per_second = f" ({int(10 * speed_multiplier)} dias/segundo)"
+        speed_text = self.small_font.render(f"Velocidade: {speed_multiplier}x" + days_per_second, True, (255, 255, 255))
         self.screen.blit(speed_text, (15, y_offset))
         y_offset += 20
         
@@ -320,7 +320,7 @@ class MainWindow:
                 
                 # Obter corpos do simulador e renderizar
                 bodies = self.simulator_client.get_bodies()
-                self.renderer.draw_bodies_with_camera(self.screen, bodies, self.camera, self.time_multipliers[self.current_multiplier_index])
+                self.renderer.draw_bodies_with_camera(self.screen, bodies, self.camera, self.time_multipliers[self.time_multiplier_index])
                 
                 # Desenhar UI
                 self._draw_ui()
