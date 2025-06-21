@@ -67,7 +67,7 @@ handleTimeScaleCommand sim obj =
             let val = fromRational $ toRational n
             in if val <= 0
                then return (sim, errorMsg "Time scale must be positive")
-               else return (setTimeScale sim val, statusOk)
+               else return (setTimeScale sim (val * 24 * 3600 * 10), statusOk)
         _ -> return (sim, errorMsg "'multiplier' is required and must be a number")
 
 handleAddBodyCommand :: Simulator -> Object -> IO (Simulator, Value)

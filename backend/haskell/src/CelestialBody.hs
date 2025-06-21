@@ -38,6 +38,24 @@ setVelocity   body new = body { velocity = new }
 setRadius     body new = body { radius   = new }
 setColor      body new = body { color    = new }
 
+vadd :: (Double, Double) -> (Double, Double) -> (Double, Double)
+vadd (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
+
+vsub :: (Double, Double) -> (Double, Double) -> (Double, Double)
+vsub (x1, y1) (x2, y2) = (x1 - x2, y1 - y2)
+
+vmul :: (Double, Double) -> Double -> (Double, Double)
+vmul (x, y) scalar = (x * scalar, y * scalar)
+
+vdiv :: (Double, Double) -> Double -> (Double, Double)
+vdiv (x, y) scalar = (x / scalar, y / scalar)
+
+vscale :: (Double, Double) -> Double -> (Double, Double)
+vscale (x, y) scale = (x * scale, y * scale)
+
+vlen :: (Double, Double) -> Double
+vlen (x, y) = sqrt (x * x + y * y)
+
 -- Update position based on velocity
 updatePosition :: CelestialBody -> Double -> CelestialBody
 updatePosition body dt = body { position = (x + vx * dt, y + vy * dt) }
@@ -56,7 +74,7 @@ distance b1 b2 = sqrt $ dx^2 + dy^2
 
 -- Collision check
 checkCollision :: CelestialBody -> CelestialBody -> Bool
-checkCollision b1 b2 = distance b1 b2 <= (radius b1 + radius b2)
+checkCollision b1 b2 = distance b1 b2 <= (radius b1 + radius b2) * 1e9
 
 -- Gravitational force from b2 on b1
 computeGravitationalForce :: CelestialBody -> CelestialBody -> (Double, Double)
@@ -67,10 +85,18 @@ computeGravitationalForce b1 b2 = (fx, fy)
     (x2, y2) = position b2
     dx = x2 - x1
     dy = y2 - y1
-    dist = sqrt (dx*dx + dy*dy)
-    force = g * mass b1 * mass b2 / (dist * dist)
-    fx = force * dx / dist
-    fy = force * dy / dist
+
+    min_dist = (radius b1 + radius b2) * 1e9
+
+    dist = max min_dist (sqrt (dx * dx + dy * dy))
+    dist_squared = dist * dist
+    force_magnitude = g * mass b1 * mass b2 / dist_squared
+    (fx, fy) = if dist == 0
+        then (0, 0)  -- Avoid division by zero
+        else let force = force_magnitude
+                 fx = force * dx / dist
+                 fy = force * dy / dist
+             in (fx, fy)
 
 -- Compute net gravitational forces on each body
 computeGravitationalForces :: [CelestialBody] -> [(Double, Double)]
