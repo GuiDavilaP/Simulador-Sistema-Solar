@@ -8,6 +8,7 @@ import Data.Aeson
 import Data.Aeson.Types (Value(..), Object)
 import qualified Data.Aeson.KeyMap as KM
 import qualified Data.ByteString.Lazy.Char8 as BL
+import qualified Data.ByteString.Char8 as BS
 import Data.Text (Text)
 import Simulator
 import CelestialBody (fromFrontEnd, name)
@@ -22,8 +23,8 @@ main = do
 
 commandLoop :: Simulator -> IO ()
 commandLoop sim = do
-    input <- BL.getContents
-    case decode input of
+    input <- BS.getLine
+    case decode (BL.fromStrict input) of
         Nothing -> do
             sendError "Invalid JSON"
             commandLoop sim

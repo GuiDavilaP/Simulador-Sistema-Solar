@@ -12,7 +12,6 @@ module CelestialBody
 
 import GHC.Generics (Generic)
 import Data.Aeson
-import Data.Aeson (ToJSON, Value, object, (.=))
 import Data.Aeson.Types (FromJSON, parseMaybe)
 import qualified Data.Aeson.KeyMap as KM
 import qualified Data.HashMap.Strict as HM
