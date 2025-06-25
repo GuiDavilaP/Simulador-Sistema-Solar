@@ -18,7 +18,7 @@ class BackendProxy:
         self.running = False
 
         if backend_path.endswith('.py'):
-            self.backend_cmd = ['.venv/bin/python3', backend_path]
+            self.backend_cmd = ['python', backend_path]
         else: 
             # Supondo que seja um binário Haskell
             if (not backend_path.startswith('./') and 
