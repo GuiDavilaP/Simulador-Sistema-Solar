@@ -18,7 +18,7 @@ class BackendProxy:
         self.running = False
 
         if backend_path.endswith('.py'):
-            self.backend_cmd = ['python', backend_path]
+            self.backend_cmd = ['.venv/bin/python3', backend_path]
         else: 
             # Supondo que seja um binário Haskell
             if (not backend_path.startswith('./') and 
@@ -29,11 +29,10 @@ class BackendProxy:
         # Estado atual do simulador
         self.current_state = {
             'bodies': [],
-            # 'stats': {
-            #     'total_bodies': 0,
-            #     'bodies_removed': 0,
-            #     'collisions': 0
-            # }
+            'stats': {
+                'total_bodies': 0,
+                'collisions': 0
+            }
         }
         
     def start(self):
@@ -106,7 +105,7 @@ class BackendProxy:
                 'radius': float(radius),
                 'position': list(position),
                 'velocity': list(velocity),
-                'color': list(color)  # Converter tupla para lista
+                'color': list(color)
             }
         }
         return self._send_command(command)
@@ -125,9 +124,9 @@ class BackendProxy:
         """Retorna a lista atual de corpos"""
         return self.current_state.get('bodies', [])
     
-    # def get_stats(self):
-    #     """Retorna estatísticas do sistema"""
-    #     return self.current_state.get('stats', {})
+    def get_stats(self):
+        """Retorna estatísticas do sistema"""
+        return self.current_state.get('stats', {})
     
     def is_alive(self):
         """Verifica se o backend ainda está rodando"""

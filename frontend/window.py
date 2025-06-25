@@ -277,7 +277,7 @@ class MainWindow:
         self.screen.blit(overlay, (10, 10))
         
         # Estatísticas do sistema
-        # stats = self.backend_proxy.get_stats()
+        stats = self.backend_proxy.get_stats()
         y_offset = 15
         
         # Status da simulação
@@ -302,24 +302,14 @@ class MainWindow:
         y_offset += 20
         
         # Número de corpos
-        # bodies_text = self.small_font.render(f"Corpos: {stats.get('total_bodies', 0)}", True, (255, 255, 255))
-        # self.screen.blit(bodies_text, (15, y_offset))
-        # y_offset += 20
+        bodies_text = self.small_font.render(f"Corpos: {stats.get('total_bodies', 0)}", True, (255, 255, 255))
+        self.screen.blit(bodies_text, (15, y_offset))
+        y_offset += 20
         
-        # # Corpos removidos
-        # removed_text = self.small_font.render(f"Removidos: {stats.get('bodies_removed', 0)}", True, (255, 100, 100))
-        # self.screen.blit(removed_text, (15, y_offset))
-        # y_offset += 20
-        
-        # # Colisões detectadas
-        # collisions_text = self.small_font.render(f"Colisões: {stats.get('collisions_detected', 0)}", True, (255, 150, 150))
-        # self.screen.blit(collisions_text, (15, y_offset))
-        # y_offset += 20
-        
-        # # Ejeções detectadas
-        # ejections_text = self.small_font.render(f"Ejeções: {stats.get('ejections_detected', 0)}", True, (150, 150, 255))
-        # self.screen.blit(ejections_text, (15, y_offset))
-        # y_offset += 20
+        # Colisões detectadas
+        collisions_text = self.small_font.render(f"Colisões: {stats.get('collisions', 0)}", True, (255, 150, 150))
+        self.screen.blit(collisions_text, (15, y_offset))
+        y_offset += 20
         
         # Controles
         controls_y = self.screen.get_height() - 200
