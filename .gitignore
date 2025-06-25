@@ -5,4 +5,8 @@ __pycache__/
 vscode/
 .idea/
 
+dist/
+dist-*/
+build/
+
 debug.log
