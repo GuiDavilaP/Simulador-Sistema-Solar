@@ -6,6 +6,8 @@ Permite escolher entre diferentes backends
 
 import argparse
 import os
+import sys
+from pathlib import Path
 from typing import Dict, Any
 
 from frontend.window import MainWindow
@@ -30,15 +32,16 @@ def parse_args() -> Dict[str, Any]:
 def main(args: Dict[str, Any]) -> None:
     use_haskell = args.get('use_haskell', False)
 
-    # script_dir = os.path.dirname(os.path.abspath(__file__))
-    # if use_haskell:
-    #     backend_path = os.path.join(script_dir, 'backend/haskell/simulator-backend')
-    # else:
-    #     backend_path = os.path.join(script_dir, 'backend/python/simulator_backend.py')
+    base_dir = Path(__file__).parent
+
     if use_haskell:
-        backend_path = 'backend/haskell/simulator-backend'
+        executable_name_with_parent = ("windows/simulator-backend.exe" if sys.platform.startswith('win') 
+                                       else "linux/simulator-backend")
+        backend_path: Path = base_dir / 'backend' / 'haskell' / executable_name_with_parent
     else:
-        backend_path = 'backend/python/simulator_backend.py'
+        backend_path = base_dir / 'backend' / 'python' / 'simulator_backend.py'
+
+    backend_path = backend_path.resolve()
 
     # Verificar se o caminho do backend existe
     if not os.path.exists(backend_path) or not os.path.isfile(backend_path):
@@ -46,8 +49,8 @@ def main(args: Dict[str, Any]) -> None:
         return
     
     # Criar e executar a janela principal
-    window = MainWindow(backend_path)
     print("Iniciando o simulador...")
+    window = MainWindow(backend_path.__str__())
     window.run()
 
 

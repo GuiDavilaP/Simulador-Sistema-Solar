@@ -75,8 +75,6 @@ class MainWindow:
             print("Erro: Não foi possível conectar ao simulador backend")
             return
         
-        print("Conectado ao backend do simulador!", file=open('debug.log', 'a'))
-        
         self.running = True
         try:
             while self.running:
@@ -208,8 +206,6 @@ class MainWindow:
         self._handle_slider_interaction(mouse_pos, mouse_pressed)
         
         for event in pygame.event.get():
-            print(f"Evento: {event}", file=open('debug.log', 'a'))
-            
             if event.type == pygame.QUIT:
                 self.running = False
                 

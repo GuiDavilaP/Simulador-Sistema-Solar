@@ -78,10 +78,8 @@ class BackendProxy:
             'dt': dt,
             'paused': paused
         }
-        print(f"Enviando comando de atualização: {command}", file=open('debug.log', 'a'))
         if self._send_command(command):
             response = self._wait_for_response()
-            print(f"Resposta recebida: {response}", file=open('debug.log', 'a'))
             if response and 'bodies' in response:
                 self.current_state = response
                 return True
