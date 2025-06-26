@@ -35,9 +35,14 @@ def main(args: Dict[str, Any]) -> None:
     base_dir = Path(__file__).parent
 
     if use_haskell:
-        executable_name_with_parent = ("windows/simulator-backend.exe" if sys.platform.startswith('win') 
-                                       else "linux/simulator-backend")
-        backend_path: Path = base_dir / 'backend' / 'haskell' / executable_name_with_parent
+        if sys.platform.startswith('win'):
+            executable_dir = 'windows'
+            executable_name = "simulator-backend.exe"
+        else:
+            executable_dir = 'linux'
+            executable_name = "simulator-backend"
+            
+        backend_path: Path = base_dir / 'backend' / 'haskell' / executable_dir / executable_name
     else:
         backend_path = base_dir / 'backend' / 'python' / 'simulator_backend.py'
 

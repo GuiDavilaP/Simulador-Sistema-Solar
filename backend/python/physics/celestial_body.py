@@ -14,7 +14,7 @@ class CelestialBody:
         self.position = position
         self.radius = radius
         self.velocity = velocity
-        self.color = color
+        self.color = color if color is not None else (0, 0, 0)
 
     @property
     def name(self) -> str:
