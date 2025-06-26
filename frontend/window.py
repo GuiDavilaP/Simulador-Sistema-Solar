@@ -101,7 +101,7 @@ class MainWindow:
                 bodies = self.backend_proxy.get_bodies()
                 self.renderer.draw_bodies_with_camera(
                     self.screen, bodies, self.camera, 
-                    self.time_multipliers[self.time_multiplier_index]
+                    int(self.time_multipliers[self.time_multiplier_index])
                 )
                 # Desenhar UI
                 self._draw_ui()
@@ -120,7 +120,7 @@ class MainWindow:
         """Atualiza a posição do handle do slider baseado na massa atual"""
         ratio = (self.current_mass_log - self.min_mass_log) / (self.max_mass_log - self.min_mass_log)
         handle_x = self.slider_rect.x + ratio * (self.slider_rect.width - self.slider_handle_rect.width)
-        self.slider_handle_rect.centerx = handle_x + self.slider_handle_rect.width // 2
+        self.slider_handle_rect.centerx = int(handle_x + self.slider_handle_rect.width // 2)
         self.slider_handle_rect.centery = self.slider_rect.centery
         
     def _get_current_mass(self):
