@@ -25,24 +25,24 @@ data Simulator = Simulator
 initializeSolarSystem :: Simulator
 initializeSolarSystem = 
     let timeScale = 24 * 3600 * 10 -- 10 days in seconds
-        sun      = CelestialBody "Sol"      1.989e30 (0, 0)        (0, 0)        40 (255, 220, 0)
-        mercury  = CelestialBody "Mercúrio" 3.285e23 (5.791e10, 0) (0, 47.87e3)  6  (169, 169, 169)
-        venus    = CelestialBody "Vênus"    4.867e24 (1.082e11, 0) (0, 35.02e3)  9  (255, 198, 73)
-        earth    = CelestialBody "Terra"    5.972e24 (1.496e11, 0) (0, 29.78e3)  10 (100, 149, 237)
-        mars     = CelestialBody "Marte"    6.39e23  (2.279e11, 0) (0, 24.077e3) 8  (205, 92, 92)
-        jupiter  = CelestialBody "Júpiter"  1.898e27 (7.785e11, 0) (0, 13.07e3)  25 (255, 165, 0)
-        saturn   = CelestialBody "Saturno"  5.683e26 (1.429e12, 0) (0, 9.69e3)   22 (238, 232, 205)
-        uranus   = CelestialBody "Urano"    8.681e25 (2.871e12, 0) (0, 6.81e3)   16 (173, 216, 230)
-        neptune  = CelestialBody "Netuno"   1.024e26 (4.495e12, 0) (0, 5.43e3)   15 (0, 0, 128)
+        sun     = CelestialBody "Sol"      1.989e30 (0, 0)        (0, 0)        40 (255, 220, 0)
+        mercury = CelestialBody "Mercúrio" 3.285e23 (5.791e10, 0) (0, 47.87e3)  6  (169, 169, 169)
+        venus   = CelestialBody "Vênus"    4.867e24 (1.082e11, 0) (0, 35.02e3)  9  (255, 198, 73)
+        earth   = CelestialBody "Terra"    5.972e24 (1.496e11, 0) (0, 29.78e3)  10 (100, 149, 237)
+        mars    = CelestialBody "Marte"    6.39e23  (2.279e11, 0) (0, 24.077e3) 8  (205, 92, 92)
+        jupiter = CelestialBody "Júpiter"  1.898e27 (7.785e11, 0) (0, 13.07e3)  25 (255, 165, 0)
+        saturn  = CelestialBody "Saturno"  5.683e26 (1.429e12, 0) (0, 9.69e3)   22 (238, 232, 205)
+        uranus  = CelestialBody "Urano"    8.681e25 (2.871e12, 0) (0, 6.81e3)   16 (173, 216, 230)
+        neptune = CelestialBody "Netuno"   1.024e26 (4.495e12, 0) (0, 5.43e3)   15 (0, 0, 128)
     in Simulator [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune] timeScale 0
 
 getSystemState :: Simulator -> Value
 getSystemState sim = object
     [ "bodies" .= map toFrontEnd (bodies sim)
-    -- , "stats"  .= object
-    --     [ "total_bodies" .= length (bodies sim)
-    --     , "collisions"   .= numCollisions sim
-    --     ]
+    , "stats"  .= object
+        [ "total_bodies" .= length (bodies sim)
+        , "collisions"   .= numCollisions sim
+        ]
     ]
 
 setTimeScale :: Simulator -> Double -> Simulator

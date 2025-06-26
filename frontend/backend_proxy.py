@@ -29,11 +29,10 @@ class BackendProxy:
         # Estado atual do simulador
         self.current_state = {
             'bodies': [],
-            # 'stats': {
-            #     'total_bodies': 0,
-            #     'bodies_removed': 0,
-            #     'collisions': 0
-            # }
+            'stats': {
+                'total_bodies': 0,
+                'collisions': 0
+            }
         }
         
     def start(self):
@@ -79,10 +78,8 @@ class BackendProxy:
             'dt': dt,
             'paused': paused
         }
-        print(f"Enviando comando de atualização: {command}", file=open('debug.log', 'a'))
         if self._send_command(command):
             response = self._wait_for_response()
-            print(f"Resposta recebida: {response}", file=open('debug.log', 'a'))
             if response and 'bodies' in response:
                 self.current_state = response
                 return True
@@ -106,7 +103,7 @@ class BackendProxy:
                 'radius': float(radius),
                 'position': list(position),
                 'velocity': list(velocity),
-                'color': list(color)  # Converter tupla para lista
+                'color': list(color)
             }
         }
         return self._send_command(command)
@@ -125,9 +122,9 @@ class BackendProxy:
         """Retorna a lista atual de corpos"""
         return self.current_state.get('bodies', [])
     
-    # def get_stats(self):
-    #     """Retorna estatísticas do sistema"""
-    #     return self.current_state.get('stats', {})
+    def get_stats(self):
+        """Retorna estatísticas do sistema"""
+        return self.current_state.get('stats', {})
     
     def is_alive(self):
         """Verifica se o backend ainda está rodando"""

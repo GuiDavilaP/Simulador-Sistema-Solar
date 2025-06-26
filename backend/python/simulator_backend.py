@@ -178,10 +178,10 @@ class SimulatorBackend:
                 'color': list(body.color)
             })
         # Obter estatísticas
-        # stats = self.simulator.get_system_stats()
+        stats = self.simulator.get_system_stats()
         return {
-            'bodies': bodies_data
-        #     'stats': stats
+            'bodies': bodies_data,
+            'stats': stats
         }
     
     def run(self):

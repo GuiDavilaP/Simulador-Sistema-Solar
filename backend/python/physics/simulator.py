@@ -1,5 +1,4 @@
 import math
-from collections import defaultdict
 from typing import List
 
 from .celestial_body import CelestialBody
@@ -18,9 +17,6 @@ class Simulator:
     def __init__(self, time_scale: float = DEFAULT_TIME_SCALE):
         self.bodies = {}
         self.time_scale = time_scale
-        
-        # Estatísticas para debug
-        self.bodies_removed = 0
         self.num_collisions = 0
 
     @property
@@ -63,7 +59,6 @@ class Simulator:
             print(f"Warning: No body with name '{body_name}' found")
         else:
             del self.bodies[body_name]
-            self.bodies_removed += 1
 
     def remove_bodies(self, body_names: List[str]):
         """Remove múltiplos corpos celestes do sistema"""
@@ -106,25 +101,23 @@ class Simulator:
         # Depois, verifica colisões e remove corpos
         self._manage_collisions()
 
-    # def get_system_stats(self):
-    #     """Retorna estatísticas do sistema para debug"""
-    #     total_mass = sum(body.mass for body in self.bodies)
-    #     total_kinetic_energy = sum(
-    #         0.5 * body.mass * (body.velocity.x**2 + body.velocity.y**2) 
-    #         for body in self.bodies
-    #     )
-    #     return {
-    #         'total_bodies': len(self.bodies),
-    #         'total_mass': total_mass,
-    #         'total_kinetic_energy': total_kinetic_energy,
-    #         'bodies_removed': self.bodies_removed,
-    #         'collisions': self.num_collisions,
-    #     }
+    def get_system_stats(self):
+        """Retorna estatísticas do sistema"""
+        # total_mass = sum(body.mass for body in self.bodies)
+        # total_kinetic_energy = sum(
+        #     0.5 * body.mass * (body.velocity.x**2 + body.velocity.y**2) 
+        #     for body in self.bodies
+        # )
+        return {
+            # 'total_mass': total_mass,
+            # 'total_kinetic_energy': total_kinetic_energy,
+            'total_bodies': len(self.bodies),
+            'collisions': self.num_collisions
+        }
     
     def reset(self):
         """Reseta o sistema, removendo todos os corpos e estatísticas"""
         self.bodies.clear()
-        self.bodies_removed = 0
         self.num_collisions = 0
 
     def _manage_collisions(self):
@@ -150,10 +143,9 @@ class Simulator:
                     # Se as massas forem iguais, remover ambos
                     destroyed_bodies.add(body1.name)
                     destroyed_bodies.add(body2.name)
+                self.num_collisions += 1
 
-        destroyed_bodies = list(destroyed_bodies)
-        self.num_collisions += len(destroyed_bodies)
-        self.remove_bodies(destroyed_bodies)
+        self.remove_bodies(list(destroyed_bodies))
 
     def _update_physics(self, dt_scaled: float):
         """Atualiza a física do sistema"""
@@ -175,11 +167,11 @@ class Simulator:
         for key, body in self.bodies.items():
             if body.mass == 0:
                 continue
-            a = forces[key] / body.mass  # Aceleração = Força / Massa
-            # Não aplicar aceleração se for muito pequena
-            # if a.length() < EPS:
-            #     continue
-            # a /= body.mass # Aceleração = Força / Massa
+            # Não aplicar aceleração se força for muito pequena
+            f = forces[key]
+            if f.length() < EPS:
+                continue
+            a = f / body.mass # Aceleração = Força / Massa
             self.bodies[key].velocity += a * dt_scaled 
             self.bodies[key].update_position(dt_scaled)
 
